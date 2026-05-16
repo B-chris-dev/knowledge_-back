@@ -29,10 +29,6 @@ class CreateThemeProcessor implements ProcessorInterface
 
         $theme->setName($data->name);
 
-        $theme->setCreatedAt(new \DateTimeImmutable());
-
-        $theme->setUpdatedAt(new \DateTimeImmutable());
-
         $theme->setCreatedBy($this->security->getUser());
 
         $theme->setUpdatedBy($this->security->getUser());
