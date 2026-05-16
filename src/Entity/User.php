@@ -10,71 +10,137 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
-use App\Dto\RegisterInput;
-use App\State\RegisterProcessor;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use App\Dto\RegisterInput;
+use App\State\RegisterProcessor;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[ORM\HasLifecycleCallbacks]
+
 #[ApiResource(
     normalizationContext: ['groups' => ['user:read']],
     operations: [
-        new GetCollection(), // GET /api/users
-        new Get(),           // GET /api/users/{id}
+
+        new GetCollection(
+            security: "is_granted('ROLE_ADMIN')"
+        ),
+
+        new Get(
+            security: "object == user or is_granted('ROLE_ADMIN')"
+        ),
+
         new Post(
-    uriTemplate: '/register',
-    input: RegisterInput::class,
-    inputFormats: ['json' => ['application/json']],
-    processor: RegisterProcessor::class
-)
+            uriTemplate: '/register',
+            input: RegisterInput::class,
+            inputFormats: ['json' => ['application/json']],
+            processor: RegisterProcessor::class
+        )
     ]
 )]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    #[Groups(['user:read'])]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
     #[Groups(['user:read'])]
-    #[ORM\Column(length: 180)]
+    #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
 
     /**
-     * @var list<string> The user roles
+     * @var list<string>
      */
     #[Groups(['user:read'])]
     #[ORM\Column]
     private array $roles = [];
 
     /**
-     * @var string The hashed password
+     * Mot de passe hashé
      */
     #[ORM\Column]
     private ?string $password = null;
 
+    #[Groups(['user:read'])]
+    #[ORM\Column]
+    private ?bool $isVerified = false;
+
+    #[Groups(['user:read'])]
+    #[ORM\Column]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[Groups(['user:read'])]
+    #[ORM\Column]
+    private ?\DateTimeImmutable $updatedAt = null;
+
     /**
      * @var Collection<int, Theme>
      */
-    #[ORM\OneToMany(targetEntity: Theme::class, mappedBy: 'createdBy', orphanRemoval: true)]
+    #[ORM\OneToMany(
+        targetEntity: Theme::class,
+        mappedBy: 'createdBy',
+        orphanRemoval: true
+    )]
     private Collection $createdTheme;
 
     /**
      * @var Collection<int, Theme>
      */
-    #[ORM\OneToMany(targetEntity: Theme::class, mappedBy: 'updatedBy')]
+    #[ORM\OneToMany(
+        targetEntity: Theme::class,
+        mappedBy: 'updatedBy'
+    )]
     private Collection $themes;
 
-    #[ORM\Column]
-    private ?bool $isVerified = null;
-    
     public function __construct()
     {
         $this->createdTheme = new ArrayCollection();
         $this->themes = new ArrayCollection();
     }
+
+    // --------------------------------------------------
+    // LIFECYCLE
+    // --------------------------------------------------
+
+    #[ORM\PrePersist]
+    public function onPrePersist(): void
+    {
+        $now = new \DateTimeImmutable();
+
+        $this->createdAt = $now;
+        $this->updatedAt = $now;
+
+        if ($this->isVerified === null) {
+            $this->isVerified = false;
+        }
+    }
+
+    #[ORM\PreUpdate]
+    public function onPreUpdate(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable();
+    }
+
+    // --------------------------------------------------
+    // SECURITY
+    // --------------------------------------------------
+
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->email;
+    }
+
+    public function eraseCredentials(): void
+    {
+    }
+
+    // --------------------------------------------------
+    // GETTERS / SETTERS
+    // --------------------------------------------------
 
     public function getId(): ?int
     {
@@ -94,22 +160,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * A visual identifier that represents this user.
-     *
-     * @see UserInterface
-     */
-    public function getUserIdentifier(): string
-    {
-        return (string) $this->email;
-    }
-
-    /**
-     * @see UserInterface
+     * @return list<string>
      */
     public function getRoles(): array
     {
         $roles = $this->roles;
-        // guarantee every user at least has ROLE_USER
+
         $roles[] = 'ROLE_USER';
 
         return array_unique($roles);
@@ -125,9 +181,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @see PasswordAuthenticatedUserInterface
-     */
     public function getPassword(): ?string
     {
         return $this->password;
@@ -140,21 +193,40 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * Ensure the session doesn't contain actual password hashes by CRC32C-hashing them, as supported since Symfony 7.3.
-     */
-    public function __serialize(): array
+    public function isVerified(): ?bool
     {
-        $data = (array) $this;
-        $data["\0".self::class."\0password"] = hash('crc32c', $this->password);
-
-        return $data;
+        return $this->isVerified;
     }
 
-    #[\Deprecated]
-    public function eraseCredentials(): void
+    public function setIsVerified(bool $isVerified): static
     {
-        // @deprecated, to be removed when upgrading to Symfony 8
+        $this->isVerified = $isVerified;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
+    {
+        $this->updatedAt = $updatedAt;
+
+        return $this;
     }
 
     /**
@@ -178,7 +250,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeCreatedTheme(Theme $createdTheme): static
     {
         if ($this->createdTheme->removeElement($createdTheme)) {
-            // set the owning side to null (unless already changed)
             if ($createdTheme->getCreatedBy() === $this) {
                 $createdTheme->setCreatedBy(null);
             }
@@ -208,7 +279,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeTheme(Theme $theme): static
     {
         if ($this->themes->removeElement($theme)) {
-            // set the owning side to null (unless already changed)
             if ($theme->getUpdatedBy() === $this) {
                 $theme->setUpdatedBy(null);
             }
@@ -216,19 +286,4 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this;
     }
-
-    public function isVerified(): ?bool
-    {
-        return $this->isVerified;
-    }
-
-    public function setIsVerified(bool $isVerified): static
-    {
-        $this->isVerified = $isVerified;
-
-        return $this;
-    }
-
-    
 }
-
