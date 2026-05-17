@@ -96,10 +96,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     )]
     private Collection $themes;
 
+    /**
+     * @var Collection<int, Purchase>
+     */
+    #[ORM\OneToMany(targetEntity: Purchase::class, mappedBy: 'user', orphanRemoval: true)]
+    private Collection $purchases;
+
     public function __construct()
     {
         $this->createdTheme = new ArrayCollection();
         $this->themes = new ArrayCollection();
+        $this->purchases = new ArrayCollection();
     }
 
     // --------------------------------------------------
@@ -281,6 +288,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->themes->removeElement($theme)) {
             if ($theme->getUpdatedBy() === $this) {
                 $theme->setUpdatedBy(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Purchase>
+     */
+    public function getPurchases(): Collection
+    {
+        return $this->purchases;
+    }
+
+    public function addPurchase(Purchase $purchase): static
+    {
+        if (!$this->purchases->contains($purchase)) {
+            $this->purchases->add($purchase);
+            $purchase->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removePurchase(Purchase $purchase): static
+    {
+        if ($this->purchases->removeElement($purchase)) {
+            // set the owning side to null (unless already changed)
+            if ($purchase->getUser() === $this) {
+                $purchase->setUser(null);
             }
         }
 
