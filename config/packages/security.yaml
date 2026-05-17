@@ -37,6 +37,7 @@ security:
             provider: app_user_provider
 
     access_control:
+        - { path: ^/api/stripe/webhook, roles: PUBLIC_ACCESS }
         - { path: ^/api/verify-email, roles: PUBLIC_ACCESS }
         - { path: ^/api/reset-password, roles: PUBLIC_ACCESS }
         - { path: ^/api/login_check, roles: PUBLIC_ACCESS }

@@ -28,13 +28,17 @@ class CreateCursusProcessor implements ProcessorInterface
         $cursus = new Cursus();
 
         $cursus->setName($data->name);
-        $cursus->setPrice($data->price);
-        $cursus->addLesson($data->lesson);
 
-        $cursus->setCreatedBy($this->security->getUser());
-        $cursus->setUpdatedBy($this->security->getUser());
+        $cursus->setPrice($data->price);
+
+        $user = $this->security->getUser();
+
+        $cursus->setCreatedBy($user);
+
+        $cursus->setUpdatedBy($user);
 
         $this->em->persist($cursus);
+
         $this->em->flush();
 
         return $cursus;
