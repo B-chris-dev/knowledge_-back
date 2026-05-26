@@ -13,11 +13,25 @@ security:
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
 
-        # LOGIN JWT
+        register:
+            pattern: ^/api/register
+            security: false
+
+        verify_email:
+            pattern: ^/api/verify-email
+            security: false
+
+        reset_password:
+            pattern: ^/api/reset-password
+            security: false
+
+        stripe_webhook:
+            pattern: ^/api/stripe/webhook
+            security: false
+
         login:
             pattern: ^/api/login_check
             stateless: true
-            user_checker: App\Security\UserChecker
             json_login:
                 check_path: /api/login_check
                 username_path: email
@@ -29,18 +43,14 @@ security:
             pattern: ^/api
             stateless: true
             provider: app_user_provider
-            user_checker: App\Security\UserChecker
             jwt: ~
 
-        main:
-            lazy: true
-            provider: app_user_provider
-
     access_control:
-        - { path: ^/api/stripe/webhook, roles: PUBLIC_ACCESS }
+        - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
         - { path: ^/api/verify-email, roles: PUBLIC_ACCESS }
         - { path: ^/api/reset-password, roles: PUBLIC_ACCESS }
-        - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
-        - { path: ^/api/register, roles: PUBLIC_ACCESS }
+        - { path: ^/api/stripe/webhook, roles: PUBLIC_ACCESS }
+        - { path: ^/api/test-email, roles: PUBLIC_ACCESS }
+
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
-        - { path: ^/api/me, roles: IS_AUTHENTICATED_FULLY }

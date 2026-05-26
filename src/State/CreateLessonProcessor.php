@@ -12,6 +12,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 
 class CreateLessonProcessor implements ProcessorInterface
 {
+    // Processor that creates a lesson linked to a cursus and stores the author.
     public function __construct(
         private EntityManagerInterface $em,
         private Security $security,
@@ -29,9 +30,7 @@ class CreateLessonProcessor implements ProcessorInterface
 
         $lesson = new Lesson();
 
-        // ------------------------
-        // DONNÉES
-        // ------------------------
+        // Set the lesson details from the input payload.
 
         $lesson->setName($data->name);
 
@@ -41,10 +40,7 @@ class CreateLessonProcessor implements ProcessorInterface
 
         $lesson->setVideo($data->video);
 
-        // ------------------------
-        // CURSUS
-        // ------------------------
-
+        // Link the lesson to the requested cursus.
         $cursus = $this->cursusRepository->find($data->cursus);
 
         if (!$cursus) {
@@ -53,19 +49,13 @@ class CreateLessonProcessor implements ProcessorInterface
 
         $lesson->setCursus($cursus);
 
-        // ------------------------
-        // USER CONNECTÉ
-        // ------------------------
-
+        // Assign the current authenticated user as creator and updater.
         $user = $this->security->getUser();
 
         $lesson->setCreatedBy($user);
-
         $lesson->setUpdatedBy($user);
 
-        // ------------------------
-        // SAVE
-        // ------------------------
+        // Save the lesson to the database.
 
         $this->em->persist($lesson);
 

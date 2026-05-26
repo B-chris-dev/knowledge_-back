@@ -18,27 +18,27 @@ class ValidPasswordValidator extends ConstraintValidator
             return;
         }
 
-        // Vérifications
+        // Validate the password strength requirements.
         $errors = [];
 
-        // Minimum 12 caractères
+        // At least 12 characters
         if (strlen($value) < 12) {
-            $errors[] = 'au minimum 12 caractères';
+            $errors[] = 'at least 12 characters';
         }
 
-        // Au moins une majuscule
+        // At least one uppercase letter
         if (!preg_match('/[A-Z]/', $value)) {
-            $errors[] = 'une majuscule';
+            $errors[] = 'an uppercase letter';
         }
 
-        // Au moins un chiffre
+        // At least one digit
         if (!preg_match('/[0-9]/', $value)) {
-            $errors[] = 'un chiffre';
+            $errors[] = 'a number';
         }
 
-        // Au moins un caractère spécial
-        if (!preg_match('/[!@#$%^&*()_+\-=\[\]{};:\'",.<>?\/\\|`~]/', $value)) {
-            $errors[] = 'un caractère spécial';
+        // At least one special character
+        if (!preg_match("/[!@#\$%\^&\*()_+\-=\[\]{};:'\",.<>?\/\\|`~]/", $value)) {
+            $errors[] = 'a special character';
         }
 
         if (!empty($errors)) {

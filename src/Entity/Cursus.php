@@ -8,9 +8,25 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use App\Dto\CreateCursusInput;
+use App\State\CreateCursusProcessor;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: CursusRepository::class)]
-#[ApiResource]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(),
+
+        new Post(
+            input: CreateCursusInput::class,
+            processor: CreateCursusProcessor::class
+        )
+    ]
+)]
 #[ORM\HasLifecycleCallbacks]
 class Cursus
 {
@@ -19,9 +35,11 @@ class Cursus
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Groups(['theme:read'])]
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
+    #[Groups(['theme:read'])]
     #[ORM\Column(type: Types::DECIMAL, precision: 5, scale: 2)]
     private ?string $price = null;
 
@@ -39,10 +57,18 @@ class Cursus
     #[ORM\JoinColumn(nullable: false)]
     private ?User $updatedBy = null;
 
+    #[ORM\ManyToOne(inversedBy: 'cursuses')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Theme $theme = null;
+
     /**
      * @var Collection<int, Lesson>
      */
-    #[ORM\OneToMany(targetEntity: Lesson::class, mappedBy: 'cursus', orphanRemoval: true)]
+    #[ORM\OneToMany(
+        targetEntity: Lesson::class,
+        mappedBy: 'cursus',
+        orphanRemoval: true
+    )]
     private Collection $lessons;
 
     public function __construct()
@@ -86,6 +112,7 @@ class Cursus
     public function setName(string $name): static
     {
         $this->name = $name;
+
         return $this;
     }
 
@@ -97,6 +124,7 @@ class Cursus
     public function setPrice(string $price): static
     {
         $this->price = $price;
+
         return $this;
     }
 
@@ -118,6 +146,7 @@ class Cursus
     public function setCreatedBy(?User $createdBy): static
     {
         $this->createdBy = $createdBy;
+
         return $this;
     }
 
@@ -129,6 +158,19 @@ class Cursus
     public function setUpdatedBy(?User $updatedBy): static
     {
         $this->updatedBy = $updatedBy;
+
+        return $this;
+    }
+
+    public function getTheme(): ?Theme
+    {
+        return $this->theme;
+    }
+
+    public function setTheme(?Theme $theme): static
+    {
+        $this->theme = $theme;
+
         return $this;
     }
 

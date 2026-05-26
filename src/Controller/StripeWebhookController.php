@@ -17,6 +17,9 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class StripeWebhookController
 {
+    // Controller endpoint for Stripe webhook events.
+    // It validates Stripe payloads and saves purchases after checkout success.
+
     #[Route('/api/stripe/webhook', methods: ['POST'])]
     public function webhook(
         Request $request,
@@ -42,6 +45,7 @@ class StripeWebhookController
                 $_ENV['STRIPE_WEBHOOK_SECRET']
             );
 
+            // Log the incoming webhook event type for debugging.
             $logger->info('Stripe webhook received', ['type' => $event->type]);
 
             if ($event->type === 'checkout.session.completed') {
@@ -74,7 +78,7 @@ class StripeWebhookController
                         return new Response('Lesson not found', 404);
                     }
 
-                    // avoid duplicate
+                    // Avoid creating duplicate purchases for the same lesson.
                     $existing = $purchaseRepository->findOneBy(['user' => $user, 'lesson' => $lesson, 'status' => 'paid']);
                     if (!$existing) {
                         $purchase = new Purchase();
@@ -98,6 +102,7 @@ class StripeWebhookController
                         return new Response('Cursus not found', 404);
                     }
 
+                    // Grant a purchase record for each lesson in the purchased cursus.
                     foreach ($cursus->getLessons() as $lesson) {
                         $existing = $purchaseRepository->findOneBy(['user' => $user, 'lesson' => $lesson, 'status' => 'paid']);
                         if (!$existing) {
