@@ -21,7 +21,6 @@ use Symfony\Component\Serializer\Attribute\Groups;
     operations: [
         new GetCollection(),
         new Get(),
-
         new Post(
             input: CreateThemeInput::class,
             processor: CreateThemeProcessor::class
@@ -31,11 +30,13 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ORM\HasLifecycleCallbacks]
 class Theme
 {
+    #[Groups(['theme:read'])]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Groups(['theme:read'])]
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
