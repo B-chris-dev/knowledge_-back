@@ -9,6 +9,7 @@ use App\Entity\User;
 
 class UserChecker implements UserCheckerInterface
 {
+    // Prevent login if the user has not verified their email address.
     public function checkPreAuth(UserInterface $user): void
     {
         if (!$user instanceof User) {
@@ -22,6 +23,6 @@ class UserChecker implements UserCheckerInterface
 
     public function checkPostAuth(UserInterface $user): void
     {
-        // Pas de vérification post-authentification nécessaire
+        // No additional post-authentication checks are required.
     }
 }

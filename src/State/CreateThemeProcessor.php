@@ -11,6 +11,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 
 class CreateThemeProcessor implements ProcessorInterface
 {
+    // Processor that creates a theme and assigns the current user as creator/updater.
     public function __construct(
         private EntityManagerInterface $em,
         private Security $security

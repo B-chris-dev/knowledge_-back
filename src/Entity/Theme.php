@@ -3,15 +3,25 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
-use App\Repository\ThemeRepository;
-use Doctrine\ORM\Mapping as ORM;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
 use App\Dto\CreateThemeInput;
+use App\Repository\ThemeRepository;
 use App\State\CreateThemeProcessor;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
+
 
 #[ORM\Entity(repositoryClass: ThemeRepository::class)]
 #[ApiResource(
+    normalizationContext: ['groups' => ['theme:read']],
     operations: [
+        new GetCollection(),
+        new Get(),
+
         new Post(
             input: CreateThemeInput::class,
             processor: CreateThemeProcessor::class
@@ -32,7 +42,7 @@ class Theme
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
-   #[ORM\Column(nullable: true)]
+    #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'createdTheme')]
@@ -41,6 +51,25 @@ class Theme
 
     #[ORM\ManyToOne(inversedBy: 'themes')]
     private ?User $updatedBy = null;
+
+  /**
+ * @var Collection<int, Cursus>
+ */
+#[Groups(['theme:read'])]
+#[ORM\OneToMany(
+    targetEntity: Cursus::class,
+    mappedBy: 'theme'
+)]
+private Collection $cursuses;
+
+    public function __construct()
+    {
+        $this->cursuses = new ArrayCollection();
+    }
+
+    // ------------------------
+    // LIFECYCLE
+    // ------------------------
 
     #[ORM\PrePersist]
     public function onPrePersist(): void
@@ -56,6 +85,10 @@ class Theme
     {
         $this->updatedAt = new \DateTimeImmutable();
     }
+
+    // ------------------------
+    // GETTERS / SETTERS
+    // ------------------------
 
     public function getId(): ?int
     {
@@ -86,18 +119,6 @@ class Theme
         return $this;
     }
 
-    public function getCreatedBy(): ?User
-    {
-        return $this->createdBy;
-    }
-
-    public function setCreatedBy(?User $createdBy): static
-    {
-        $this->createdBy = $createdBy;
-
-        return $this;
-    }
-
     public function getUpdatedAt(): ?\DateTimeImmutable
     {
         return $this->updatedAt;
@@ -110,6 +131,18 @@ class Theme
         return $this;
     }
 
+    public function getCreatedBy(): ?User
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?User $createdBy): static
+    {
+        $this->createdBy = $createdBy;
+
+        return $this;
+    }
+
     public function getUpdatedBy(): ?User
     {
         return $this->updatedBy;
@@ -118,6 +151,35 @@ class Theme
     public function setUpdatedBy(?User $updatedBy): static
     {
         $this->updatedBy = $updatedBy;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Cursus>
+     */
+    public function getCursuses(): Collection
+    {
+        return $this->cursuses;
+    }
+
+    public function addCursus(Cursus $cursus): static
+    {
+        if (!$this->cursuses->contains($cursus)) {
+            $this->cursuses->add($cursus);
+            $cursus->setTheme($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCursus(Cursus $cursus): static
+    {
+        if ($this->cursuses->removeElement($cursus)) {
+            if ($cursus->getTheme() === $this) {
+                $cursus->setTheme(null);
+            }
+        }
 
         return $this;
     }

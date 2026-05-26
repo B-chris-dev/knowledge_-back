@@ -12,11 +12,15 @@ use Symfony\Component\Routing\Attribute\Route;
 
 class CheckoutController
 {
+    // Controller responsible for creating Stripe checkout sessions
+    // for lesson and cursus purchases.
+
     #[Route('/api/checkout/lesson/{id}', methods: ['POST'])]
     public function checkout(
         Lesson $lesson,
         Security $security
     ): JsonResponse {
+        // Create a Stripe checkout session for a single lesson purchase.
 
         $user = $security->getUser();
         if (!$user) {
@@ -62,6 +66,7 @@ class CheckoutController
         Cursus $cursus,
         Security $security
     ): JsonResponse {
+        // Create a Stripe checkout session for purchasing a full cursus.
         $user = $security->getUser();
         if (!$user) {
             return new JsonResponse(['error' => 'Authentication required'], 401);

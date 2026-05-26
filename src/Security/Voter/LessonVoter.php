@@ -38,7 +38,7 @@ class LessonVoter extends Voter
 
     private function canView(Lesson $lesson, User $user): bool
     {
-        // Vérifier si l'utilisateur a acheté cette leçon
+        // Check whether the user has a paid purchase record for this lesson.
         $purchase = $this->purchaseRepository->findOneBy([
             'user' => $user,
             'lesson' => $lesson,

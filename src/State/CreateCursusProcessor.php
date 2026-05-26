@@ -6,6 +6,7 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Dto\CreateCursusInput;
 use App\Entity\Cursus;
+use App\Repository\ThemeRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 
@@ -13,7 +14,8 @@ class CreateCursusProcessor implements ProcessorInterface
 {
     public function __construct(
         private EntityManagerInterface $em,
-        private Security $security
+        private Security $security,
+        private ThemeRepository $themeRepository
     ) {}
 
     public function process(
@@ -25,13 +27,28 @@ class CreateCursusProcessor implements ProcessorInterface
 
         /** @var CreateCursusInput $data */
 
+      
+        $user = $this->security->getUser();
+
+        if (!$user) {
+            throw new \RuntimeException('Utilisateur non connecté');
+        }
+
+        $themeId = basename($data->theme);
+
+$theme = $this->themeRepository->find($themeId);
+
+        if (!$theme) {
+            throw new \RuntimeException('Thème introuvable');
+        }
+
         $cursus = new Cursus();
 
         $cursus->setName($data->name);
 
-        $cursus->setPrice($data->price);
+        $cursus->setPrice((string) $data->price);
 
-        $user = $this->security->getUser();
+        $cursus->setTheme($theme);
 
         $cursus->setCreatedBy($user);
 
